@@ -12,3 +12,6 @@ fun List<String>.splitList(separator: String): List<List<String>> =
         else acc.last() += a
         acc
     }
+
+fun <T> Collection<Collection<T>>.intersectAll(): Set<T> =
+    this.fold(this.first().toSet()) { acc, e -> acc intersect e.toSet() }
