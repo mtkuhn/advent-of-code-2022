@@ -9,8 +9,8 @@ fun main() {
 }
 
 fun day05part1(input: List<String>): String {
-    val crates = input.takeWhile { it.isNotEmpty() }.linesToCrateStacks()
-    val moves = input.dropWhile { it.isNotEmpty() }.drop(1).map { it.toCrateMove() }
+    val crates: MutableList<MutableList<Char>> = input.takeWhile { it.isNotEmpty() }.linesToCrateStacks().apply { print(this) }
+    val moves = input.dropWhile { it.isNotEmpty() }.drop(1).map { CrateMove.fromString(it) }
 
     moves.forEach { move ->
         repeat(move.count) {
@@ -21,38 +21,45 @@ fun day05part1(input: List<String>): String {
     return crates.map { it.first() }.joinToString("")
 }
 
-fun List<String>.linesToCrateStacks(): MutableList<MutableList<Char>> {
-    val stackCount = this.last().takeLast(2).trim().toInt()
-    val stacks = mutableListOf<MutableList<Char>>().apply {
-        (0 until stackCount).forEach { this += mutableListOf<Char>() }
-    }
-    this.dropLast(1).map { line ->
-        (0 until stackCount).forEach { i ->
-            line[1+i*4].apply {
-                if(!this.isWhitespace()) stacks.elementAt(i) += line[1+i*4]
-            }
-        }
-    }
-    return stacks
-}
-
-data class CrateMove(val count: Int, val source: Int, val destination: Int)
-val moveRegex = """move (\d+) from (\d+) to (\d+)""".toRegex()
-
-fun String.toCrateMove(): CrateMove =
-    moveRegex.find(this)!!.destructured
-        .let { (c, s, d) -> CrateMove(c.toInt(), s.toInt(), d.toInt()) }
-
 fun day05part2(input: List<String>): String {
     val crates = input.takeWhile { it.isNotEmpty() }.linesToCrateStacks()
-    val moves = input.dropWhile { it.isNotEmpty() }.drop(1).map { it.toCrateMove() }
+    val moves = input.dropWhile { it.isNotEmpty() }.drop(1).map { CrateMove.fromString(it) }
 
     moves.forEach { move ->
-        crates[move.destination-1].addAll(0, crates[move.source-1].removeFirst(move.count))
+        crates[move.destination-1].addAll(0, crates[move.source-1].takeAndRemove(move.count))
     }
 
     return crates.map { it.first() }.joinToString("")
 }
 
-fun MutableList<Char>.removeFirst(count: Int) = this.take(count)
-    .apply { repeat(count) { this@removeFirst.removeFirst() } }
+data class CrateMove(val count: Int, val source: Int, val destination: Int) {
+    companion object {
+        private val moveRegex = """^move (\d+) from (\d+) to (\d+)$""".toRegex()
+
+        fun fromString(str: String): CrateMove = moveRegex.find(str)?.destructured?.let { (c, s, d) ->
+            CrateMove(c.toInt(), s.toInt(), d.toInt())
+        }?:error("bad input")
+    }
+}
+
+fun String.lineToCrateStackRow(): List<Char?> =
+    this.drop(1).filterIndexed { i, _ -> i%4 == 0 }.map {
+        if(it.isWhitespace()) null
+        else it
+    }
+
+fun List<String>.linesToCrateStacks(): MutableList<MutableList<Char>> =
+    this.dropLast(1).map { it.lineToCrateStackRow() }.transpose()
+
+fun List<List<Char?>>.transpose(): MutableList<MutableList<Char>> =
+    mutableListOf<MutableList<Char>>().apply {
+        repeat(this@transpose.first().size) { this += mutableListOf<Char>() }
+        this@transpose.forEach { r ->
+            r.forEachIndexed { i, char ->
+                if(char != null) { this[i] += char }
+            }
+        }
+    }
+
+fun MutableList<Char>.takeAndRemove(count: Int): List<Char> =
+    this.take(count).apply { repeat(count) { this@takeAndRemove.removeFirst() } }
