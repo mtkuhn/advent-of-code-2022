@@ -55,7 +55,7 @@ class FileStructure(val root: FileNode = FileNode("/", 0, true, null),
 }
 
 data class FileNode(val name: String, val size: Int, val isDirectory: Boolean,
-                    val parent: FileNode?, val children: MutableList<FileNode> = mutableListOf()) {
+                    val parent: FileNode?, val children: MutableList<FileNode> = mutableListOf(), var totalSize: Int? = null) {
     fun addFromLsResult(lsResult: String): FileNode =
         lsResult.splitToPair(' ')
             .let { result ->
@@ -65,5 +65,5 @@ data class FileNode(val name: String, val size: Int, val isDirectory: Boolean,
                 }
             }.apply { this@FileNode.children += this }
 
-    fun tallySize(): Int = (this.size + children.sumOf { it.tallySize() }).apply { "$name size=$this" } //todo: caching?
+    fun tallySize(): Int = totalSize?:(this.size + children.sumOf { it.tallySize() }).apply { totalSize = this }
 }
