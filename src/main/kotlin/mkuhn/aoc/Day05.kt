@@ -1,6 +1,9 @@
+@file:Suppress("UNCHECKED_CAST")
+
 package mkuhn.aoc
 
 import readInput
+import transpose
 
 fun main() {
     val input = readInput("Day05")
@@ -49,17 +52,7 @@ fun String.lineToCrateStackRow(): List<Char?> =
     }
 
 fun List<String>.linesToCrateStacks(): MutableList<MutableList<Char>> =
-    this.dropLast(1).map { it.lineToCrateStackRow() }.transpose()
-
-fun List<List<Char?>>.transpose(): MutableList<MutableList<Char>> =
-    mutableListOf<MutableList<Char>>().apply {
-        repeat(this@transpose.first().size) { this += mutableListOf<Char>() }
-        this@transpose.forEach { r ->
-            r.forEachIndexed { i, char ->
-                if(char != null) { this[i] += char }
-            }
-        }
-    }
+    this.dropLast(1).map { it.lineToCrateStackRow() }.transpose { it != null } as MutableList<MutableList<Char>>
 
 fun MutableList<Char>.takeAndRemove(count: Int): List<Char> =
     this.take(count).apply { repeat(count) { this@takeAndRemove.removeFirst() } }
