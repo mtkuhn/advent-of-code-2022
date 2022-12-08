@@ -1,6 +1,6 @@
 package mkuhn.aoc
 
-import readInput
+import mkuhn.aoc.util.readInput
 
 fun main() {
     val input = readInput("Day02")

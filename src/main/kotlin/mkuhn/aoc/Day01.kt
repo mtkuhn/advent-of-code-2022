@@ -1,7 +1,7 @@
 package mkuhn.aoc
 
-import readInput
-import splitList
+import mkuhn.aoc.util.readInput
+import mkuhn.aoc.util.splitList
 
 fun main() {
     val input = readInput("Day01").splitList("")

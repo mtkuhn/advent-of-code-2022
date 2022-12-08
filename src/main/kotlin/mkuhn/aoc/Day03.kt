@@ -1,7 +1,7 @@
 package mkuhn.aoc
 
-import intersectAll
-import readInput
+import mkuhn.aoc.util.intersectAll
+import mkuhn.aoc.util.readInput
 
 fun main() {
     val rucksacks = readInput("Day03")

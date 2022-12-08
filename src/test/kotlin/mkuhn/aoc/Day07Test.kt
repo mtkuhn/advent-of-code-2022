@@ -2,8 +2,8 @@ package mkuhn.aoc
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import readInput
-import readTestInput
+import mkuhn.aoc.util.readInput
+import mkuhn.aoc.util.readTestInput
 
 internal class Day07Test {
 

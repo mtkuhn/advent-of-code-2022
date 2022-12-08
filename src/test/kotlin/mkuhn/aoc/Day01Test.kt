@@ -1,8 +1,8 @@
 package mkuhn.aoc
 
 import org.junit.jupiter.api.Test
-import readTestInput
-import splitList
+import mkuhn.aoc.util.readTestInput
+import mkuhn.aoc.util.splitList
 
 internal class Day01Test {
 

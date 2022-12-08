@@ -2,8 +2,8 @@
 
 package mkuhn.aoc
 
-import readInput
-import transpose
+import mkuhn.aoc.util.readInput
+import mkuhn.aoc.util.transpose
 
 fun main() {
     val input = readInput("Day05")

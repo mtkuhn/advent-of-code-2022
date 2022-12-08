@@ -1,7 +1,7 @@
 package mkuhn.aoc
 
 import org.junit.jupiter.api.Test
-import readTestInput
+import mkuhn.aoc.util.readTestInput
 import kotlin.test.assertEquals
 
 internal class Day02Test {

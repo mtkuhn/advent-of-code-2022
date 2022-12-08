@@ -1,8 +1,8 @@
 package mkuhn.aoc
 
-import intersectAll
+import mkuhn.aoc.util.intersectAll
 import org.junit.jupiter.api.Test
-import splitList
+import mkuhn.aoc.util.splitList
 import kotlin.test.assertEquals
 
 internal class UtilsTest {
