@@ -1,6 +1,7 @@
 package mkuhn.aoc
 
 import mkuhn.aoc.util.readInput
+import mkuhn.aoc.util.splitToPair
 
 fun main() {
     val input = readInput("Day07")
@@ -31,8 +32,6 @@ fun List<String>.associateCommandsToOutput(): List<Pair<String, List<String>>> =
         else acc.last().second += a
         acc
     }
-
-fun String.splitToPair(separator: Char) = this.substringBefore(separator) to this.substringAfter(separator)
 
 class FileStructure(val root: FileNode = FileNode("/", 0, true, null),
                     val dirList: MutableList<FileNode> = mutableListOf(root)) {
