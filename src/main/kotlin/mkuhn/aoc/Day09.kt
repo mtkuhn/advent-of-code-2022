@@ -11,30 +11,29 @@ fun main() {
 }
 
 fun day09part1(input: List<String>): Int {
-    val moves = input.map { it.splitToPair(' ') }
-        .map { it.first.first() to it.second.toInt() }
-
-    val history = mutableListOf(Rope(listOf(Point(0, 0), Point(0, 0))))
-    moves.forEach { m ->
-        repeat(m.second) {
-            history += history.last().moveRopeInDirection(m.first)
-        }
-        history.last()
-    }
-    return history.distinctBy { it.tail }.count()
+    val moves = input.map { it.lineToMovement() }
+    val rope = Rope(listOf(Point(0, 0), Point(0, 0)))
+    return applyMovementAndGetTailHistory(rope, moves).count()
 }
 
 fun day09part2(input: List<String>): Int {
-    val moves = input.map { it.splitToPair(' ') }
-        .map { it.first.first() to it.second.toInt() }
+    val moves = input.map { it.lineToMovement() }
+    val rope = Rope(List(10) { Point(0, 0) })
+    return applyMovementAndGetTailHistory(rope, moves).count()
+}
 
-    val history = mutableListOf(Rope(List(10) { Point(0, 0) }))
+fun String.lineToMovement() = this.splitToPair(' ').let { it.first.first() to it.second.toInt() }
+
+fun applyMovementAndGetTailHistory(rope: Rope, moves: List<Pair<Char, Int>>): Set<Point> {
+    var workingRope = rope
+    val tailHistory = mutableSetOf(rope.tail)
     moves.forEach { m ->
         repeat(m.second) {
-            history += history.last().moveRopeInDirection(m.first)
+            workingRope = workingRope.moveRopeInDirection(m.first)
+            tailHistory += workingRope.tail
         }
     }
-    return history.distinctBy { it.tail }.count()
+    return tailHistory
 }
 
 data class Rope(val knots: List<Point>) {
@@ -57,7 +56,7 @@ data class Rope(val knots: List<Point>) {
         }.let { Rope(it) }
     }
 
-    fun Point.moveToward(target: Point): Point {
+    private fun Point.moveToward(target: Point): Point {
         var newX = this.x
         var newY = this.y
         if(!this.isTouching(target)) {
@@ -69,6 +68,6 @@ data class Rope(val knots: List<Point>) {
         return Point(newX, newY)
     }
     
-    fun Point.isTouching(target: Point) =
+    private fun Point.isTouching(target: Point) =
         target.x in (this.x-1 .. this.x+1) && target.y in (this.y-1 .. this.y+1)
 }
