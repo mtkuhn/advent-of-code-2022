@@ -1,6 +1,10 @@
 package mkuhn.aoc.util
 
-data class Point(val x: Int, val y: Int)
+import kotlin.math.abs
+
+data class Point(val x: Int, val y: Int) {
+    fun manhattanDistance(p: Point) = abs(this.x-p.x) + abs(this.y-p.y)
+}
 
 open class Grid<T>(private val grid: List<List<T>>) {
 
@@ -30,6 +34,10 @@ open class Grid<T>(private val grid: List<List<T>>) {
     fun allPoints() = grid.indices.flatMap { x ->
         (grid.first().indices).map { y -> Point(x, y) }
     }
+
+    fun cardinalAdjacentTo(pos: Point) =
+        listOf(Point(pos.x-1, pos.y), Point(pos.x+1, pos.y), Point(pos.x, pos.y-1), Point(pos.x, pos.y+1))
+            .filter { isInBounds(it) }
 
     fun valueAt(pos: Point) = grid[pos.x][pos.y]
 
