@@ -15,6 +15,6 @@ internal class Day13Test {
     @Test
     fun testPart2() {
         val testInput = readTestInput("Day13_test")
-        assertEquals(0, day13part2(testInput))
+        assertEquals(140, day13part2(testInput))
     }
 }
