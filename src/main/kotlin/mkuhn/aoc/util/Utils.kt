@@ -10,9 +10,9 @@ fun readTestInput(name: String) = File("src/test/resources/", "$name.txt")
 
 fun String.splitToPair(separator: Char) = this.substringBefore(separator) to this.substringAfter(separator)
 
-fun List<String>.splitList(separator: String): List<List<String>> =
-    this.fold(mutableListOf(mutableListOf<String>())) { acc, a ->
-        if (a == separator) acc += mutableListOf<String>()
+fun <T> List<T>.splitList(separator: T): List<List<T>> =
+    this.fold(mutableListOf(mutableListOf<T>())) { acc, a ->
+        if (a == separator) acc += mutableListOf<T>()
         else acc.last() += a
         acc
     }
