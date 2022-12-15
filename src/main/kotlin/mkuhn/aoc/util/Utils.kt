@@ -39,3 +39,18 @@ inline fun <T> Iterable<T>.takeWhileInclusive(predicate: (T) -> Boolean): List<T
     }
     return list
 }
+
+fun Int.progressBetween(i: Int) = IntProgression.fromClosedRange(this, i, if(this > i) -1 else 1)
+
+//stolen shamelessly from Todd
+infix fun IntRange.fullyOverlaps(other: IntRange): Boolean =
+    first <= other.first && last >= other.last
+
+infix fun IntRange.overlaps(other: IntRange): Boolean =
+    first <= other.last && other.first <= last
+
+infix fun LongRange.fullyOverlaps(other: LongRange): Boolean =
+    first <= other.first && last >= other.last
+
+infix fun LongRange.overlaps(other: LongRange): Boolean =
+    first <= other.last && other.first <= last

@@ -1,6 +1,7 @@
 package mkuhn.aoc
 
 import mkuhn.aoc.util.Point
+import mkuhn.aoc.util.progressBetween
 import mkuhn.aoc.util.readInput
 
 fun main() {
@@ -49,8 +50,6 @@ fun Pair<Point, Point>.segmentToPoints(): Set<Point> =
             Point(xx, yy)
         }
     }.toSet()
-
-fun Int.progressBetween(i: Int) = IntProgression.fromClosedRange(this, i, if(this > i) -1 else 1)
 
 fun MutableMap<Int, MutableList<Int>>.addPoint(p: Point) {
     if(this[p.x] == null) { this[p.x] = mutableListOf(p.y) }
