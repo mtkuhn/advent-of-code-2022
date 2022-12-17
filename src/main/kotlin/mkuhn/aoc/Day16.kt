@@ -39,14 +39,14 @@ class ValvePathFinder(private val minsAllowed: Int, valves: List<Valve>) {
         return valvePath.findBestPathScore()
     }
 
-    fun ValvePath.findBestPathScore(): Int {
+    private fun ValvePath.findBestPathScore(): Int {
         val paths = this.viableMoves()
         return if(paths.isEmpty()) 0
         else if(paths.all { p -> p.walkers.all { it.minsUsed == minsAllowed } }) paths.maxOf { it.pressureRelieved }
         else paths.maxOf { it.findBestPathScore() }
     }
 
-    fun List<Valve>.toDistanceMap(): Map<Pair<Valve, Valve>, Int> {
+    private fun List<Valve>.toDistanceMap(): Map<Pair<Valve, Valve>, Int> {
         return this.flatMap { v1 ->
             this.map { v2 -> v1 to v2 }
         }.associateWith { this.distanceBetween(it.first, it.second) }
