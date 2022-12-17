@@ -16,12 +16,12 @@ internal class Day16Test {
     @Test
     fun testPart1r() {
         val testInput = readInput("Day16")
-        println(day16part1(testInput))
+        assertEquals(1792, day16part1(testInput))
     }
 
     @Test
     fun testPart2() {
         val testInput = readTestInput("Day16_test")
-        assertEquals(0, day16part2(testInput))
+        assertEquals(1707, day16part2(testInput))
     }
 }
