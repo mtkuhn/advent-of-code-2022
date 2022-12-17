@@ -17,7 +17,7 @@ fun day16part1(input: List<String>): Int {
     val init = valves.find { it.name == "AA" }!!
     val you = ValveWalker(init, 0)
 
-    return findOptimalPath(mapOf(0 to you), valves, mins, init).pressureRelieved
+    return findOptimalPathVal(mapOf(0 to you), valves, mins)
 }
 
 fun day16part2(input: List<String>): Int {
@@ -28,29 +28,38 @@ fun day16part2(input: List<String>): Int {
     val you = ValveWalker(init, 0)
     val elephant = ValveWalker(init, 0)
 
-    return findOptimalPath(mapOf(0 to you, 1 to elephant), valves, mins, init).pressureRelieved
+    return findOptimalPathVal(mapOf(0 to you, 1 to elephant), valves, mins)
 }
 
-fun findOptimalPath(workers: Map<Int, ValveWalker>,
+fun findOptimalPathVal(workers: Map<Int, ValveWalker>,
                     valves: List<Valve>,
-                    mins: Int, initialValve: Valve): DoubleValvePath {
+                    mins: Int): Int {
     val distMap = valves.toDistanceMap()
-    var valvePaths = listOf(DoubleValvePath(
+    var valvePaths = listOf(ValvePath(
         workers,
-        valves.filter { it.flowRate == 0 } + initialValve, //the 0 flow valves may as well be closed, and the stuck AA valve
+        valves.filter { it.flowRate > 0 }, //the 0 flow valves may as well be closed, and the stuck AA valve
         0,
-        mins))
+        mins,
+        distMap
+    ))
+
+    //todo: A* this. heur is pressRelieved + forAllUnclosed(flow*(maxMinsRemaining))
 
     var i = 0
+    var workingBest: Int = 0
     while(valvePaths.any { vp -> vp.walkers.all { w -> w.value.minsUsed < mins } }) {
         i++
-        valvePaths = valvePaths.flatMap { v ->
-            v.viableMoves(distMap)
-        }
-        println("$i | pathnum: ${valvePaths.size} | ${valvePaths.maxOf { it.pressureRelieved }}")
+
+        valvePaths = valvePaths.flatMap { v -> v.viableMoves() }
+        var split = valvePaths.groupBy { p -> p.walkers.all { w -> w.value.minsUsed == mins} }
+        val thisBest = split[true]?.maxOfOrNull { it.pressureRelieved }?:0
+        if(thisBest > workingBest) workingBest = thisBest
+        valvePaths = split[false]?:emptyList()
+
+        println("$i | pathnum: ${valvePaths.size} | $workingBest}")
     }
 
-    return valvePaths.maxBy { it.pressureRelieved }
+    return workingBest
 }
 
 fun List<Valve>.toDistanceMap(): Map<Pair<Valve, Valve>, Int> {
@@ -61,42 +70,42 @@ fun List<Valve>.toDistanceMap(): Map<Pair<Valve, Valve>, Int> {
 
 data class ValveWalker(val currPos: Valve, val minsUsed: Int)
 
-data class DoubleValvePath(val walkers: Map<Int, ValveWalker>,
-                           val closedValves: List<Valve>,
-                           val pressureRelieved: Int,
-                           val minsAllowed: Int) {
+data class ValvePath(val walkers: Map<Int, ValveWalker>,
+                     val remainingValves: List<Valve>,
+                     val pressureRelieved: Int,
+                     val minsAllowed: Int,
+                     val distMap:  Map<Pair<Valve, Valve>, Int>) {
 
     //move to and open the valve that presents the highest reward (factoring in cost to reach it)
     //return multiple in the event of a tie
-    fun viableMoves(distMap:  Map<Pair<Valve, Valve>, Int>): List<DoubleValvePath> {
+    fun viableMoves(): List<ValvePath> {
         val wId = walkers.minBy { it.value.minsUsed }.key
         return if(walkers[wId]!!.minsUsed == minsAllowed) listOf(this)
         else {
-            var moves = distMap.filter { distEntry -> distEntry.key.first == walkers[wId]!!.currPos }
-                .filter { distEntry -> distEntry.key.second !in closedValves }
-                .map { distEntry -> moveTo(wId, distEntry.key.second, distEntry.value) }
-                .filter { it.walkers[wId]!!.minsUsed <= minsAllowed }
-                .filter { it.pressureRelieved > this.pressureRelieved }
+            val moves = remainingValves.map { rv -> walkers[wId]!!.currPos to rv }
+                .map { rv -> moveTo(wId, rv.second, distMap[rv]!!) } //map out to these destinations
+                .filter { it.walkers[wId]!!.minsUsed <= minsAllowed } //don't go over allowed mins
 
             moves.ifEmpty {
-                //this means there's nothing else helpful to move to, just set to 30 mins
+                //this means there's nothing else helpful to move to, just set workers to 30 mins to close the loop
                 listOf(this.copy(walkers = walkers.map { it.key to it.value.copy(minsUsed = minsAllowed) }.toMap()))
             }
         }
     }
 
-    fun moveTo(walkerId: Int, newValve: Valve, distance: Int): DoubleValvePath {
+    private fun moveTo(walkerId: Int, newValve: Valve, distance: Int): ValvePath {
         val mm = walkers[walkerId]!!.minsUsed+distance+1
         val newPressure = newValve.flowRate*(minsAllowed-mm)
         val newWalkers = walkers.toMutableMap().apply { this[walkerId] =
             ValveWalker(newValve, mm)
         }
 
-        return DoubleValvePath(
+        return ValvePath(
             newWalkers,
-            closedValves+newValve,
+            remainingValves-newValve,
             pressureRelieved + newPressure,
-            minsAllowed
+            minsAllowed,
+            distMap
         )
     }
 }
