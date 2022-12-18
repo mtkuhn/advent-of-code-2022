@@ -2,6 +2,7 @@ package mkuhn.aoc
 
 import mkuhn.aoc.util.Point
 import mkuhn.aoc.util.readInput
+import java.math.BigInteger
 
 fun main() {
     val input = readInput("Day17")
@@ -9,15 +10,33 @@ fun main() {
     println(day17part2(input))
 }
 
-fun day17part1(input: List<String>): Int {
-    val rockSeq = getRockSequence(2022) //2022
+fun day17part1(input: List<String>): Long  = runRockSimulation(input, 2022)
+fun day17part2(input: List<String>): Long  = runRockSimulation(input, 1000000000000L)
+
+//todo: there should be a repeating pattern to this. The length of rock pattern to length of move pattern should cause a repeat
+//but where does the pattern start from?
+fun day17part2x(input: List<String>): Long {
+    val patternLength = input.first().length.toLong() * RockType.values().size.toLong()
+    val runCount = 1000000000000L
+    val repeats = runCount/patternLength
+    val remainder = runCount%patternLength
+
+    (0..50).map { i ->
+        runRockSimulation(input, i*patternLength)
+    }.zipWithNext().map { it.first - it.second }.forEach { println(it) }
+
+    return 1L
+}
+
+fun runRockSimulation(input: List<String>, rockCount: Long): Long {
+    val rockSeq = getRockSequence(rockCount) //2022
     val gasSeq = getGasSequence(input.first()).iterator()
 
     val xBounds = (0 .. 6)
-    val yMin = 0
     var rockHeight = 0
-    val rockMass = mutableSetOf<Point>()
-    var i = 0
+    var rockMass = mutableSetOf<Point>()
+
+    val caveHistory = mapOf<Set<Point>, Pair<Int, Int>>() //todo: needs more data
 
     rockSeq.forEach { rr ->
 
@@ -28,28 +47,32 @@ fun day17part1(input: List<String>): Int {
 
         while(!isResting) {
             val jettedRock = workingRock.moveByVector(Point(gasSeq.next(), 0)) //move by gas jet
-            if(jettedRock.points.none { it.x !in xBounds } && jettedRock.points.none { it in rockMass }) { workingRock = jettedRock }
+            if(jettedRock.none { it.x !in xBounds } && jettedRock notintersects rockMass) { workingRock = jettedRock }
 
             val fallingRock = workingRock.moveByVector(Point(0, 1)) //drop
-            if(fallingRock.points.none { it.y > yMin } && fallingRock.points.none { it in rockMass }) { workingRock = fallingRock }
+            if(fallingRock.none { it.y > 0 } && fallingRock notintersects rockMass) { workingRock = fallingRock }
             else { isResting = true }
         }
 
 
-        val thisHeight = workingRock.points.minOf { it.y }-1
+        val thisHeight = workingRock.minOf { it.y }-1
         if(thisHeight < rockHeight) { rockHeight = thisHeight }
 
-        rockMass += workingRock.points
+        rockMass += workingRock
 
         //cut off useless points
-        //val floor = rockMass.groupBy { it.x }.map { l -> l.value.minOf { it.y } }.max()
-        //if(floor > 0) rockMass.removeIf { it.y < floor }
+        val floor = rockMass.groupBy { it.x }.map { l -> l.value.minOf { it.y } }.max()
+        if(floor > 0) {
+            rockMass = rockMass.filter { it.y >= floor }.toMutableSet()
+        }
     }
 
     //rockMass.print(rockHeight-5)
 
-    return -rockHeight
+    return -rockHeight.toLong()
 }
+
+infix fun Set<Point>.notintersects(otherSet: Set<Point>) = none { it in otherSet }
 
 fun Set<Point>.print(height: Int) {
     (height .. 0).map { y ->
@@ -60,13 +83,10 @@ fun Set<Point>.print(height: Int) {
     }.joinToString("\n").apply { println(this); println() }
 }
 
-fun day17part2(input: List<String>): Int =
-    2
+fun Set<Point>.moveByVector(v: Point): Set<Point> = map { Point(it.x + v.x, it.y + v.y) }.toSet()
 
-class Rock(val points: Set<Point>) {
-    fun moveByVector(v: Point): Rock {
-        return Rock(points.map { Point(it.x + v.x, it.y + v.y) }.toSet())
-    }
+data class Cave(val landedRock: Set<Point>, val lastRockType: RockType, val lastGasJet: Int) {
+
 }
 
 enum class RockType (val points: Set<Point>) {
@@ -80,9 +100,9 @@ enum class RockType (val points: Set<Point>) {
 //thanks stackoverflow
 fun <T> Sequence<T>.repeat() = sequence { while (true) yieldAll(this@repeat) }
 
-fun getRockSequence(count: Int) = (0 until count).asSequence()
-    .map { RockType.values()[it%RockType.values().size] }
-    .map { Rock(it.points) }
+fun getRockSequence(count: Long) = (0 until count).asSequence()
+    .map { RockType.values()[(it%RockType.values().size).toInt()] }
+    .map { it.points }
 
 
 fun getGasSequence(input: String) =
