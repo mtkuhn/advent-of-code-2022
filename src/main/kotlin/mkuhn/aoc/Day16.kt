@@ -58,6 +58,7 @@ class ValvePathFinder(private val minsAllowed: Int, valves: List<Valve>) {
         else {
             val moves = remainingValves.map { rv -> walker.currPos to rv }
                 .map { rv -> moveTo(walker, rv.second, distMap[rv]!!) } //map out to these destinations
+                .plus(this.copy(walkers = (walkers-walker+ValveWalker(walker.currPos, minsAllowed)).sortedBy { it.minsUsed })) //or maybe just do nothing?
                 .filter { it.walkers.all { w -> w.minsUsed <= minsAllowed } }//don't go over allowed mins
 
             moves.ifEmpty {
