@@ -1,14 +1,6 @@
 package mkuhn.aoc
 
 import mkuhn.aoc.util.Point
-import mkuhn.aoc.util.readInput
-import java.math.BigInteger
-
-fun main() {
-    val input = readInput("Day17")
-    println(day17part1(input))
-    println(day17part2(input))
-}
 
 fun day17part1(input: List<String>): Long  = runRockSimulation(input, 2022)
 fun day17part2(input: List<String>): Long  = runRockSimulation(input, 1000000000000L)
@@ -29,50 +21,61 @@ fun day17part2x(input: List<String>): Long {
 }
 
 fun runRockSimulation(input: List<String>, rockCount: Long): Long {
-    val rockSeq = getRockSequence(rockCount) //2022
-    val gasSeq = getGasSequence(input.first()).iterator()
-
+    val gasJets = input.first().map { if(it == '<') -1 else 1 }
     val xBounds = (0 .. 6)
-    var rockHeight = 0
-    var rockMass = mutableSetOf<Point>()
+    val seen = mutableMapOf<CaveState, Pair<Int, Long>>()
+    var runningHeight = 0 //todo: Long?
+    var runningRockPile = mutableSetOf<Point>()
+    var gasJetIndex = 0
 
-    val caveHistory = mapOf<Set<Point>, Pair<Int, Int>>() //todo: needs more data
+    (0 until rockCount).forEach { ri ->
+        val cave = CaveState(runningRockPile.toZeroBottom(), (ri%RockType.values().size).toInt(), gasJetIndex)
+        if(seen.contains(cave)) {
+            //short-circuit because we have a repeating pattern now
+            val cycleLength = ri - seen[cave]!!.second
+            val iterationsLeft = rockCount/cycleLength
+            val heightPerCycle = runningHeight - seen[cave]!!.first
+            val fullCyclicalHeight = iterationsLeft*heightPerCycle
+            println("pattern: $cycleLength, $iterationsLeft, $heightPerCycle, $fullCyclicalHeight")
+            return -(seen[cave]!!.first + fullCyclicalHeight)
+        } else {
+            //seen[cave] = runningHeight to ri
 
-    rockSeq.forEach { rr ->
+            var isResting = false
+            var workingRock = getRockAt(cave.rockIndex).moveByVector(Point(2, -3+runningHeight)) //new rock at correct origin
 
-        var isResting = false
-        var workingRock = rr
+            while(!isResting) {
+                val jettedRock = workingRock.moveByVector(Point(gasJets[gasJetIndex], 0)) //move by gas jet
+                if(jettedRock.none { it.x !in xBounds } && jettedRock notIntersects runningRockPile) { workingRock = jettedRock }
+                gasJetIndex = (gasJetIndex+1)%gasJets.size
 
-        workingRock = workingRock.moveByVector(Point(2, -3+rockHeight)) //center on correct origin
+                val fallingRock = workingRock.moveByVector(Point(0, 1)) //drop
+                if(fallingRock.none { it.y > 0 } && fallingRock notIntersects runningRockPile) { workingRock = fallingRock }
+                else { isResting = true }
+            }
 
-        while(!isResting) {
-            val jettedRock = workingRock.moveByVector(Point(gasSeq.next(), 0)) //move by gas jet
-            if(jettedRock.none { it.x !in xBounds } && jettedRock notintersects rockMass) { workingRock = jettedRock }
+            runningRockPile += workingRock
+            runningRockPile = runningRockPile.trimToAccessibleFloor().toMutableSet()
+            runningHeight = runningRockPile.minOf { it.y }-1
 
-            val fallingRock = workingRock.moveByVector(Point(0, 1)) //drop
-            if(fallingRock.none { it.y > 0 } && fallingRock notintersects rockMass) { workingRock = fallingRock }
-            else { isResting = true }
-        }
-
-
-        val thisHeight = workingRock.minOf { it.y }-1
-        if(thisHeight < rockHeight) { rockHeight = thisHeight }
-
-        rockMass += workingRock
-
-        //cut off useless points
-        val floor = rockMass.groupBy { it.x }.map { l -> l.value.minOf { it.y } }.max()
-        if(floor > 0) {
-            rockMass = rockMass.filter { it.y >= floor }.toMutableSet()
         }
     }
 
     //rockMass.print(rockHeight-5)
 
-    return -rockHeight.toLong()
+    return -runningHeight.toLong()
 }
 
-infix fun Set<Point>.notintersects(otherSet: Set<Point>) = none { it in otherSet }
+data class CaveState(val rockMass: Set<Point>, val rockIndex: Int, val jetIteration: Int)
+
+infix fun Set<Point>.notIntersects(otherSet: Set<Point>) = none { it in otherSet }
+
+fun Set<Point>.trimToAccessibleFloor(): Set<Point> {
+    val floor = groupBy { it.x }.map { l -> l.value.minOfOrNull { it.y }?:0 }.maxOrNull()?:0
+    return filter { it.y <= floor+4 }.toSet() //offset by 4 because there could be a hanging shelf
+}
+
+fun Set<Point>.toZeroBottom(): Set<Point> = moveByVector(Point(0, -(maxOfOrNull { it.y }?:0)))
 
 fun Set<Point>.print(height: Int) {
     (height .. 0).map { y ->
@@ -85,10 +88,6 @@ fun Set<Point>.print(height: Int) {
 
 fun Set<Point>.moveByVector(v: Point): Set<Point> = map { Point(it.x + v.x, it.y + v.y) }.toSet()
 
-data class Cave(val landedRock: Set<Point>, val lastRockType: RockType, val lastGasJet: Int) {
-
-}
-
 enum class RockType (val points: Set<Point>) {
     MINUS(setOf(Point(0,0), Point(1, 0), Point(2, 0), Point(3, 0))),
     PLUS(setOf(Point(0, -1), Point(1, -1), Point(2, -1), Point(1, -2), Point(1, 0))),
@@ -97,15 +96,6 @@ enum class RockType (val points: Set<Point>) {
     SQUARE(setOf(Point(0,0), Point(1,0), Point(0,-1), Point(1,-1)))
 }
 
-//thanks stackoverflow
-fun <T> Sequence<T>.repeat() = sequence { while (true) yieldAll(this@repeat) }
-
-fun getRockSequence(count: Long) = (0 until count).asSequence()
-    .map { RockType.values()[(it%RockType.values().size).toInt()] }
-    .map { it.points }
-
-
-fun getGasSequence(input: String) =
-    input.asSequence().map { if(it == '<') -1 else 1 }.repeat()
+fun getRockAt(i: Int) = RockType.values()[i].points
 
 
