@@ -28,7 +28,7 @@ internal class Day16Test {
     @Test
     fun testPart2r() {
         val testInput = readInput("Day16")
-        assertEquals(0, day16part2(testInput))
+        assertEquals(2587, day16part2(testInput))
         //2580 too low
     }
 }
